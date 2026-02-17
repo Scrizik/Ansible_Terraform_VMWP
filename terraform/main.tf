@@ -1,59 +1,76 @@
-# VM Web Server Debian 12
 resource "proxmox_vm_qemu" "web_server" {
-  name        = "debian-web-01"
+  name        = "web-server"
   target_node = "pve"
-  clone       = "debian-12-standard"
+  vmid        = 110
+  clone       = "debian12-template"
+  full_clone  = true
+  
+  # ACTIVATION DE L'AGENT QEMU (Important !)
+  agent       = 1
 
   cores   = 2
   sockets = 1
   memory  = 2048
 
+  # Réseau (ID=0 obligatoire pour v2.9.14)
+  network {
+    id     = 0
+    model  = "virtio"
+    bridge = "vmbr0"
+  }
+
+  # Disque (Syntaxe scsi0/disk obligatoire pour v2.9.14)
   disk {
-    type    = "scsi"
+    slot    = "scsi0"
     storage = "local-lvm"
+    type    = "disk"
     size    = "20G"
   }
 
-  network {
-    model  = "virtio"
-    bridge = "vmbr0"
-  }
-
-  ipconfig0 = "ip=dhcp"
-
-  os_type = "cloud-init"
-
-  lifecycle {
-    ignore_changes = [network, cipassword]
-  }
+  # Cloud-Init
+  os_type    = "cloud-init"
+  ciuser     = "jordan"
+  cipassword = "Serveur1234"
+  ipconfig0  = "ip=192.168.1.201/24,gw=192.168.1.1"
+  
+  sshkeys = <<EOF
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHBh2mv22dPFyLNXwFwHgMUamb+3xqmvnNDSUv8xkIG3 jordan@terraform
+  EOF
 }
 
-# VM DB Server Debian 12
 resource "proxmox_vm_qemu" "db_server" {
-  name        = "debian-db-01"
+  name        = "db-server"
   target_node = "pve"
-  clone       = "debian-12-standard"
+  vmid        = 111
+  clone       = "debian12-template"
+  full_clone  = true
+  
+  # ACTIVATION DE L'AGENT QEMU (Important !)
+  agent       = 1
 
-  cores   = 4
+  cores   = 2
   sockets = 1
-  memory  = 4096
-
-  disk {
-    type    = "scsi"
-    storage = "local-lvm"
-    size    = "30G"
-  }
+  memory  = 2048
 
   network {
+    id     = 0
     model  = "virtio"
     bridge = "vmbr0"
   }
 
-  ipconfig0 = "ip=192.168.1.210/24,gw=192.168.1.1"
-
-  os_type = "cloud-init"
-
-  lifecycle {
-    ignore_changes = [network, cipassword]
+  disk {
+    slot    = "scsi0"
+    storage = "local-lvm"
+    type    = "disk"
+    size    = "20G"
   }
+
+  os_type    = "cloud-init"
+  ciuser     = "jordan"
+  cipassword = "Serveur1234"
+  ipconfig0  = "ip=192.168.1.202/24,gw=192.168.1.1"
+  
+  sshkeys = <<EOF
+  ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHBh2mv22dPFyLNXwFwHgMUamb+3xqmvnNDSUv8xkIG3 jordan@terraform
+  EOF
 }
