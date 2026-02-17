@@ -5,21 +5,21 @@ resource "proxmox_vm_qemu" "web_server" {
   clone       = "debian12-template"
   full_clone  = true
   
-  # ACTIVATION DE L'AGENT QEMU (Important !)
+  # ACTIVATION DE L'AGENT QEMU
   agent       = 1
 
   cores   = 2
   sockets = 1
   memory  = 2048
 
-  # Réseau (ID=0 obligatoire pour v2.9.14)
+  # Réseau
   network {
     id     = 0
     model  = "virtio"
     bridge = "vmbr0"
   }
 
-  # Disque (Syntaxe scsi0/disk obligatoire pour v2.9.14)
+  # Disque Principal (OS)
   disk {
     slot    = "scsi0"
     storage = "local-lvm"
@@ -27,10 +27,17 @@ resource "proxmox_vm_qemu" "web_server" {
     size    = "20G"
   }
 
-  # Cloud-Init
+  # 🚨 DISQUE CLOUD-INIT OBLIGATOIRE (C'est lui qui porte ta config user/IP)
+  disk {
+    slot    = "ide2"
+    type    = "cloudinit"
+    storage = "local-lvm"
+  }
+
+  # Cloud-Init Config
   os_type    = "cloud-init"
   ciuser     = "jordan"
-  cipassword = "Serveur1234"
+  # cipassword = "Serveur1234" (Désactivé pour forcer la clé SSH)
   ipconfig0  = "ip=192.168.1.201/24,gw=192.168.1.1"
   
   sshkeys = <<EOF
@@ -45,19 +52,21 @@ resource "proxmox_vm_qemu" "db_server" {
   clone       = "debian12-template"
   full_clone  = true
   
-  # ACTIVATION DE L'AGENT QEMU (Important !)
+  # ACTIVATION DE L'AGENT QEMU
   agent       = 1
 
   cores   = 2
   sockets = 1
   memory  = 2048
 
+  # Réseau
   network {
     id     = 0
     model  = "virtio"
     bridge = "vmbr0"
   }
 
+  # Disque Principal (OS)
   disk {
     slot    = "scsi0"
     storage = "local-lvm"
@@ -65,9 +74,17 @@ resource "proxmox_vm_qemu" "db_server" {
     size    = "20G"
   }
 
+  # 🚨 DISQUE CLOUD-INIT OBLIGATOIRE
+  disk {
+    slot    = "ide2"
+    type    = "cloudinit"
+    storage = "local-lvm"
+  }
+
+  # Cloud-Init Config
   os_type    = "cloud-init"
   ciuser     = "jordan"
-  cipassword = "Serveur1234"
+  # cipassword = "Serveur1234"
   ipconfig0  = "ip=192.168.1.202/24,gw=192.168.1.1"
   
   sshkeys = <<EOF
