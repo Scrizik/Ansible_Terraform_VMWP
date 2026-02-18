@@ -3,3 +3,4 @@
 *.tfstate
 *.tfstate.*
 *.tfstate.backup
+deploy.sh
