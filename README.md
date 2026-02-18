@@ -105,18 +105,39 @@ ansible-playbook -i inventories/staging/hosts.yml site.yml -K
 
 ## 📊 Flux de données
 
-```
-Terraform variables.tf
-    ↓
-production.tfvars → environment="production" → VMs *-production, IPs .201-.202
-staging.tfvars    → environment="staging"    → VMs *-staging, IPs .211-.212
-    ↓
-Ansible inventory
-    ↓
-production/group_vars/all.yml → firewall=✅, https=✅, backup=✅
-staging/group_vars/all.yml    → firewall=❌, https=❌, backup=❌
-    ↓
-Ansible roles avec conditions (when: xxx_enabled)
+```mermaid
+flowchart TD
+    Start["📋 Déploiement Multi-Environnements"]
+    
+    Start --> TFVars{"Choix environnement"}
+    
+    TFVars -->|production.tfvars| ProdTF["🔧 Terraform Apply<br/>environment=production"]
+    TFVars -->|staging.tfvars| StageTF["🔧 Terraform Apply<br/>environment=staging"]
+    
+    ProdTF --> ProdVMs["☁️ VMs Production<br/>web-server-production (110)<br/>db-server-production (111)<br/>IPs: .201-.202"]
+    StageTF --> StageVMs["☁️ VMs Staging<br/>web-server-staging (120)<br/>db-server-staging (121)<br/>IPs: .211-.212"]
+    
+    ProdVMs --> ProdInv["📝 Ansible Inventory<br/>inventories/production/<br/>firewall=✅ https=✅ backup=✅"]
+    StageVMs --> StageInv["📝 Ansible Inventory<br/>inventories/staging/<br/>firewall=❌ https=❌ backup=❌"]
+    
+    ProdInv --> ProdPlay["▶️ Ansible Playbook<br/>site.yml"]
+    StageInv --> StagePlay["▶️ Ansible Playbook<br/>site.yml"]
+    
+    ProdPlay --> ProdFinal["✅ Serveurs Production<br/>Web: Nginx + HTTPS<br/>DB: MariaDB + Backup<br/>Security: UFW actif"]
+    StagePlay --> StageFinal["✅ Serveurs Staging<br/>Web: Nginx HTTP simple<br/>DB: MariaDB sans backup<br/>Security: aucune"]
+    
+    style Start fill:#333,stroke:#666,color:#fff,stroke-width:2px
+    style TFVars fill:#444,stroke:#666,color:#fff,stroke-width:2px
+    style ProdTF fill:#555,stroke:#777,color:#fff,stroke-width:2px
+    style StageTF fill:#555,stroke:#777,color:#fff,stroke-width:2px
+    style ProdVMs fill:#666,stroke:#888,color:#fff,stroke-width:2px
+    style StageVMs fill:#666,stroke:#888,color:#fff,stroke-width:2px
+    style ProdInv fill:#555,stroke:#777,color:#fff,stroke-width:2px
+    style StageInv fill:#555,stroke:#777,color:#fff,stroke-width:2px
+    style ProdPlay fill:#444,stroke:#666,color:#fff,stroke-width:2px
+    style StagePlay fill:#444,stroke:#666,color:#fff,stroke-width:2px
+    style ProdFinal fill:#2d5016,stroke:#5a8a2d,color:#fff,stroke-width:3px
+    style StageFinal fill:#2d5016,stroke:#5a8a2d,color:#fff,stroke-width:3px
 ```
 
 ## 🎯 Avantages de cette architecture
