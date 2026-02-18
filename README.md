@@ -1,8 +1,34 @@
 # Architecture Multi-Environnements - Terraform + Ansible
 
-## Vue d'ensemble
+## 📋 Vue d'ensemble
 
 Ce projet démontre une **architecture professionnelle** où Terraform et Ansible travaillent ensemble pour gérer plusieurs environnements (production, staging) **sans duplication de code**.
+
+**Stack technique :**
+- 🏗️ **Terraform** : Provisionnement infrastructure Proxmox
+- ⚙️ **Ansible** : Configuration automatisée avec rôles
+- 🌐 **Nginx** : Serveur web (HTTPS en production)
+- 🗄️ **MariaDB** : Base de données avec backup automatique
+- 🔒 **UFW** : Firewall (production uniquement)
+
+## 🚀 Déploiement rapide
+
+### Déploiement simple (main)
+```bash
+./deploy.sh
+```
+
+### Déploiement Production
+```bash
+./deploy-production.sh
+```
+✅ HTTPS + Firewall + Backup DB automatique
+
+### Déploiement Staging
+```bash
+./deploy-staging.sh
+```
+✅ Configuration légère pour tests rapides
 
 ## 🏗️ Comment ça fonctionne
 
@@ -236,13 +262,144 @@ terraform output -var-file="production.tfvars"
 - [x] Scripts de déploiement automatisés
 - [x] Documentation complète
 
+## 🔐 Sécurité (Production uniquement)
+
+### Firewall UFW
+- Ports autorisés : **22** (SSH), **80** (HTTP), **443** (HTTPS)
+- Politique par défaut : DENY incoming, ALLOW outgoing
+- Configuration idempotente
+
+```bash
+# Vérifier le firewall
+ssh jordan@192.168.1.201
+sudo ufw status
+```
+
+### HTTPS
+- Certificat SSL auto-signé avec SubjectAltName (IP + domaine)
+- Redirect automatique HTTP → HTTPS
+- Headers de sécurité (HSTS, X-Frame-Options, CSP)
+- TLS 1.2/1.3 uniquement
+
+```bash
+# Accès HTTPS (accepter le certificat)
+curl -k https://192.168.1.201
+# ou : https://web-prod.local
+```
+
+## 💾 Backup Base de Données
+
+### Configuration (Production)
+- **Fréquence** : Tous les jours à 2h du matin
+- **Emplacement** : `/var/backups/mariadb/`
+- **Rétention** : 7 jours
+- **Format** : SQL compressé (.sql.gz)
+
+### Vérifier les backups
+```bash
+ssh jordan@192.168.1.202
+ls -lh /var/backups/mariadb/
+tail -f /var/log/mysql_backup.log
+```
+
+### Tester manuellement
+```bash
+ssh jordan@192.168.1.202
+sudo /usr/local/bin/backup_mysql.sh
+```
+
+## 🧪 Tests et validation
+
+### Web
+```bash
+# Production (HTTPS)
+curl -k https://192.168.1.201
+
+# Staging (HTTP)
+curl http://192.168.1.211
+```
+
+### Firewall
+```bash
+ssh jordan@192.168.1.201 "sudo ufw status"
+```
+
+### Cron job backup
+```bash
+ssh jordan@192.168.1.202 "sudo crontab -l"
+```
+
+### Badge environnement
+La page web affiche automatiquement :
+- 🔴 Badge production ou 🟠 Badge staging
+- État HTTPS, Firewall, Backup DB
+
+## 📊 Variables par environnement
+
+| Variable | Production | Staging |
+|----------|-----------|---------|
+| `environment_name` | production | staging |
+| `firewall_enabled` | ✅ true | ❌ false |
+| `https_enabled` | ✅ true | ❌ false |
+| `db_backup_enabled` | ✅ true | ❌ false |
+| `nginx_server_name` | web-prod.local | web-staging.local |
+| `db_backup_schedule` | "0 2 * * *" | N/A |
+
+## 🔄 Idempotence
+
+Le playbook est **100% idempotent**. Relancez-le sans crainte :
+
+```bash
+./deploy-production.sh
+./deploy-production.sh  # ← Aucun changement, tout en "ok"
+```
+
+## 🛠️ Commandes utiles
+
+```bash
+# Lister l'inventory
+ansible-inventory -i ansible/inventories/production/hosts.yml --list
+
+# Mode dry-run (test sans appliquer)
+ansible-playbook -i ansible/inventories/production/hosts.yml ansible/site.yml --check
+
+# Mode verbose (debug)
+ansible-playbook -i ansible/inventories/production/hosts.yml ansible/site.yml -vv
+
+# Exécuter seulement certains tags
+ansible-playbook -i ansible/inventories/production/hosts.yml ansible/site.yml --tags backup
+
+# Vérifier la syntaxe
+ansible-playbook ansible/site.yml --syntax-check
+
+# Terraform : détruire un environnement
+cd terraform
+terraform destroy -var-file="staging.tfvars"  # Garde production
+```
+
 ## 🎓 Concepts clés démontrés
 
 1. **Infrastructure as Code** (IaC): Terraform
-2. **Configuration Management**: Ansible
+2. **Configuration Management**: Ansible  
 3. **Separation of Concerns**: Terraform = infra, Ansible = config
 4. **DRY Principle**: Un seul code, plusieurs environnements
 5. **Variables d'environnement**: Configuration externalisée
 6. **Idempotence**: Playbooks relançables sans erreur
 7. **Sécurité par défaut**: Production sécurisée automatiquement
 8. **Conditionnalité**: Comportement différent selon l'environnement
+
+## 📝 Notes importantes
+
+- **Certificat SSL** : Auto-signé, le navigateur affichera un avertissement
+- **Mot de passe sudo** : Flag `-K` dans les scripts demande le mot de passe
+- **Parallélisme Terraform** : Configuré à 2 pour créer les VMs simultanément
+- **DNS local** : Ajoutez les entrées dans `/etc/hosts` pour utiliser les noms de domaine
+
+## 🚀 Pour aller plus loin
+
+- 🔐 Intégrer **Vault** pour les secrets
+- ☁️ Utiliser **Terraform Cloud** pour le state distant
+- 📊 Ajouter **monitoring** (Prometheus, Grafana)
+- 🔄 Implémenter **blue/green deployment**
+
+- **DNS local** : Ajoutez les entrées dans `/etc/hosts` pour utiliser les noms de domaine
