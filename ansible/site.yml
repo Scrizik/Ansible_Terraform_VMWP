@@ -1,12 +1,12 @@
 ---
 - name: Collecter les facts de tous les serveurs
   hosts: all
-  gather_facts: yes
+  gather_facts: true
   tasks: []
 
 - name: Configuration des serveurs Web
   hosts: web
-  become: yes
+  become: true
   roles:
     - common
     - security
@@ -14,7 +14,7 @@
 
 - name: Configuration des serveurs DB
   hosts: db
-  become: yes
+  become: true
   roles:
     - common
     - security
