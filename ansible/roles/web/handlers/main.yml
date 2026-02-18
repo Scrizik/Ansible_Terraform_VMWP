@@ -1,0 +1,5 @@
+---
+- name: Recharger Nginx
+  systemd:
+    name: nginx
+    state: reloaded

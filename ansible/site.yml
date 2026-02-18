@@ -1,0 +1,14 @@
+---
+- name: Configuration des serveurs Web
+  hosts: web
+  become: yes
+  roles:
+    - common
+    - web
+
+- name: Configuration des serveurs DB
+  hosts: db
+  become: yes
+  roles:
+    - common
+    - db

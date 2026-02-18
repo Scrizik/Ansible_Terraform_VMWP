@@ -1,0 +1,21 @@
+---
+- name: Créer l'utilisateur deploy
+  user:
+    name: deploy
+    state: present
+    shell: /bin/bash
+    create_home: yes
+  tags: user
+
+- name: Ajouter deploy au groupe sudo
+  user:
+    name: deploy
+    groups: sudo
+    append: yes
+  tags: user
+
+- name: Mettre à jour le cache APT
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: apt

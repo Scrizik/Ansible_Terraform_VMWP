@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serveur Web</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-left: 4px solid #2196F3;
+            margin: 20px 0;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Serveur Web Nginx</h1>
+        <p>Déployé avec Terraform et Ansible</p>
+        
+        <div class="info">
+            <p><span class="label">IP du serveur Web:</span> {{ ansible_default_ipv4.address }}</p>
+            <p><span class="label">Hostname:</span> {{ ansible_hostname }}</p>
+        </div>
+        
+        <div class="info">
+            <p><span class="label">🗄️ IP du serveur de Base de Données:</span></p>
+            <h2 style="color: #2196F3; margin: 10px 0;">{{ hostvars[groups['db'][0]]['ansible_default_ipv4']['address'] }}</h2>
+        </div>
+        
+        <div class="info">
+            <p><span class="label">Géré par:</span> Ansible</p>
+            <p><span class="label">Date de déploiement:</span> {{ ansible_date_time.iso8601 }}</p>
+        </div>
+    </div>
+</body>
+</html>
