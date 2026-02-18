@@ -1,4 +1,13 @@
 ---
+- name: Configurer sudo NOPASSWD pour jordan
+  lineinfile:
+    path: /etc/sudoers.d/jordan
+    line: 'jordan ALL=(ALL) NOPASSWD:ALL'
+    create: yes
+    mode: '0440'
+    validate: 'visudo -cf %s'
+  tags: sudo
+
 - name: Créer l'utilisateur deploy
   user:
     name: deploy
