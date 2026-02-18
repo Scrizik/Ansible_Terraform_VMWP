@@ -43,7 +43,7 @@ echo "------------------------------------"
 cd ansible
 
 echo "Installation des dépendances Ansible..."
-ansible-galaxy collection install -r requirements.yml -q
+ansible-galaxy collection install -r requirements.yml
 
 echo ""
 echo "Test de connectivité..."
@@ -51,7 +51,7 @@ ansible all -i inventories/staging/hosts.yml -m ping
 
 echo ""
 echo "Configuration des serveurs..."
-ansible-playbook -i inventories/staging/hosts.yml site.yml -K
+ansible-playbook -i inventories/staging/hosts.yml site.yml
 
 cd ..
 

@@ -45,12 +45,23 @@
   when: https_enabled | default(false)
   tags: https
 
-- name: Générer un certificat SSL auto-signé
+- name: Déployer la configuration OpenSSL pour le certificat
+  template:
+    src: openssl.cnf.j2
+    dest: /etc/nginx/ssl/openssl.cnf
+    owner: root
+    group: root
+    mode: '0644'
+  when: https_enabled | default(false)
+  tags: https
+
+- name: Générer un certificat SSL auto-signé avec IP et domaine
   command: >
     openssl req -x509 -nodes -days 365 -newkey rsa:2048
     -keyout /etc/nginx/ssl/nginx-selfsigned.key
     -out /etc/nginx/ssl/nginx-selfsigned.crt
-    -subj "/C=FR/ST=France/L=Paris/O=Infrastructure/OU=IT/CN={{ nginx_server_name | default('localhost') }}"
+    -config /etc/nginx/ssl/openssl.cnf
+    -extensions v3_req
   args:
     creates: /etc/nginx/ssl/nginx-selfsigned.crt
   when: https_enabled | default(false)
