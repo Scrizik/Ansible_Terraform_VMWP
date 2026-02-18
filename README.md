@@ -246,12 +246,3 @@ terraform output -var-file="production.tfvars"
 6. **Idempotence**: Playbooks relançables sans erreur
 7. **Sécurité par défaut**: Production sécurisée automatiquement
 8. **Conditionnalité**: Comportement différent selon l'environnement
-
-## 🚀 Pour aller plus loin
-
-- ✅ **CI/CD avec GitHub Actions** : Voir [.github/README_CICD.md](.github/README_CICD.md)
-- ⚙️ **AWX (Ansible Tower)** : Voir [docs/AWX_GUIDE.md](docs/AWX_GUIDE.md)
-- 🔐 Intégrer **Vault** pour les secrets
-- ☁️ Utiliser **Terraform Cloud** pour le state distant
-- 📊 Ajouter **monitoring** (Prometheus, Grafana)
-- 🔄 Implémenter **blue/green deployment**
