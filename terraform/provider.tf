@@ -12,5 +12,5 @@ provider "proxmox" {
   pm_user         = "terraform@pve"
   pm_password     = var.proxmox_token_secret
   pm_tls_insecure = true
-  pm_parallel     = 1
+  pm_parallel     = 2  # Permet 2 VMs en parallèle
 }

@@ -27,7 +27,7 @@
     host_all: yes
     state: absent
     login_unix_socket: /var/run/mysqld/mysqld.sock
-  ignore_errors: yes
+  ignore_errors: true
   tags: mariadb
 
 - name: Créer une base de données de test
