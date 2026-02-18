@@ -1,0 +1,38 @@
+---
+- name: Installer MariaDB
+  apt:
+    name:
+      - mariadb-server
+      - mariadb-client
+      - python3-pymysql
+    state: present
+  tags: mariadb
+
+- name: S'assurer que MariaDB est démarré et activé
+  systemd:
+    name: mariadb
+    state: started
+    enabled: yes
+  tags: mariadb
+
+- name: Vérifier que MariaDB écoute sur le port 3306
+  wait_for:
+    port: 3306
+    timeout: 10
+  tags: mariadb
+
+- name: Sécuriser l'installation MariaDB (supprimer les utilisateurs anonymes)
+  community.mysql.mysql_user:
+    name: ''
+    host_all: yes
+    state: absent
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  ignore_errors: yes
+  tags: mariadb
+
+- name: Créer une base de données de test
+  community.mysql.mysql_db:
+    name: testdb
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  tags: mariadb

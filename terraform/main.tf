@@ -27,7 +27,7 @@ resource "proxmox_vm_qemu" "web_server" {
     size    = "20G"
   }
 
-  # 🚨 DISQUE CLOUD-INIT OBLIGATOIRE (C'est lui qui porte ta config user/IP)
+  # 🚨 DISQUE CLOUD-INIT
   disk {
     slot    = "ide2"
     type    = "cloudinit"
@@ -37,7 +37,7 @@ resource "proxmox_vm_qemu" "web_server" {
   # Cloud-Init Config
   os_type    = "cloud-init"
   ciuser     = "jordan"
-  # cipassword = "Serveur1234" (Désactivé pour forcer la clé SSH)
+  cipassword = "Serveur1234" 
   ipconfig0  = "ip=192.168.1.201/24,gw=192.168.1.1"
   
   sshkeys = <<EOF
@@ -74,7 +74,7 @@ resource "proxmox_vm_qemu" "db_server" {
     size    = "20G"
   }
 
-  # 🚨 DISQUE CLOUD-INIT OBLIGATOIRE
+  # 🚨 DISQUE CLOUD-INIT 
   disk {
     slot    = "ide2"
     type    = "cloudinit"
@@ -84,7 +84,7 @@ resource "proxmox_vm_qemu" "db_server" {
   # Cloud-Init Config
   os_type    = "cloud-init"
   ciuser     = "jordan"
-  # cipassword = "Serveur1234"
+  cipassword = "Serveur1234"
   ipconfig0  = "ip=192.168.1.202/24,gw=192.168.1.1"
   
   sshkeys = <<EOF

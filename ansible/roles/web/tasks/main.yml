@@ -1,0 +1,29 @@
+---
+- name: Installer Nginx
+  apt:
+    name: nginx
+    state: present
+  tags: nginx
+
+- name: S'assurer que Nginx est démarré et activé
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
+  tags: nginx
+
+- name: Déployer la page HTML avec l'IP de la DB
+  template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    owner: www-data
+    group: www-data
+    mode: '0644'
+  notify: Recharger Nginx
+  tags: nginx
+
+- name: Vérifier que le port 80 est ouvert
+  wait_for:
+    port: 80
+    timeout: 10
+  tags: nginx
