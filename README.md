@@ -75,7 +75,7 @@ Ansible_Terraform_Proxmox/
 │
 └── ansible/               # Configuration Management
     ├── site.yml           # Playbook principal
-    ├── hosts.yml          # Inventory des serveurs (YAML)
+    ├── inventory.yml      # Inventory des serveurs (YAML)
     ├── ansible.cfg        # Configuration Ansible
     ├── requirements.yml   # Dépendances Ansible
     └── roles/
