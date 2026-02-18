@@ -4,17 +4,7 @@ Projet complet de déploiement et configuration d'infrastructure sur Proxmox :
 - **Terraform** : Provisionnement des VMs (web + db)
 - **Ansible** : Configuration automatisée avec rôles
 
-## 📋 Architecture
-
-```
-┌─────────────────┐         ┌─────────────────┐
-│   Web Server    │         │   DB Server     │
-│  192.168.1.201  │◄───────►│  192.168.1.202  │
-│     Nginx       │         │    MariaDB      │
-└─────────────────┘         └─────────────────┘
-```
-
-## 🔄 Workflow de déploiement
+## � Workflow de déploiement
 
 ```mermaid
 flowchart TD
@@ -47,17 +37,27 @@ flowchart TD
     
     Verification --> Success([✅ Déploiement réussi<br/>http://192.168.1.201])
     
-    style Start fill:#e1f5ff
-    style Success fill:#c8e6c9
-    style TF_Apply fill:#fff9c4
-    style Ansible_Start fill:#f3e5f5
-    style VM_Web fill:#bbdefb
-    style VM_DB fill:#bbdefb
-    style Role_Web fill:#c5e1a5
-    style Role_DB fill:#c5e1a5
+    style Start fill:#666,stroke:#333,color:#fff
+    style Success fill:#2d5f2e,stroke:#1b3a1c,color:#fff
+    style TF_Apply fill:#5d4b2c,stroke:#3d2b1c,color:#fff
+    style Ansible_Start fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style VM_Web fill:#3d5a80,stroke:#1d3a60,color:#fff
+    style VM_DB fill:#3d5a80,stroke:#1d3a60,color:#fff
+    style Role_Web fill:#2d4a2d,stroke:#1d2a1d,color:#fff
+    style Role_DB fill:#2d4a2d,stroke:#1d2a1d,color:#fff
+    style TF_Init fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style TF_Plan fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style Cloud_Init_Web fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style Cloud_Init_DB fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style Ansible_Ping fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style Ansible_Facts fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style Role_Common fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style Deploy_Page fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+    style DB_Ready fill:#2d5f2e,stroke:#1b3a1c,color:#fff
+    style Verification fill:#4a4a4a,stroke:#2a2a2a,color:#fff
 ```
 
-### Services déployés
+## 📋 Services déployés
 - **VM Web** : Nginx avec page affichant l'IP de la DB
 - **VM DB** : MariaDB avec base de test
 - **Utilisateur** : `deploy` créé sur les deux VMs
