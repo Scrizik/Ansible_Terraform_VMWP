@@ -133,24 +133,24 @@ ansible-playbook -i inventories/staging/hosts.yml site.yml -K
 
 ```mermaid
 flowchart TD
-    Start["📋 Déploiement Multi-Environnements"]
+    Start[Déploiement Multi-Environnements]
     
-    Start --> TFVars{"Choix environnement"}
+    Start --> TFVars{Choix environnement}
     
-    TFVars -->|production.tfvars| ProdTF["🔧 Terraform Apply<br/>environment=production"]
-    TFVars -->|staging.tfvars| StageTF["🔧 Terraform Apply<br/>environment=staging"]
+    TFVars -->|production.tfvars| ProdTF[Terraform Apply production]
+    TFVars -->|staging.tfvars| StageTF[Terraform Apply staging]
     
-    ProdTF --> ProdVMs["☁️ VMs Production<br/>web-server-production (110)<br/>db-server-production (111)<br/>IPs: .201-.202"]
-    StageTF --> StageVMs["☁️ VMs Staging<br/>web-server-staging (120)<br/>db-server-staging (121)<br/>IPs: .211-.212"]
+    ProdTF --> ProdVMs[VMs Production<br/>web-server-production<br/>db-server-production<br/>IPs .201-.202]
+    StageTF --> StageVMs[VMs Staging<br/>web-server-staging<br/>db-server-staging<br/>IPs .211-.212]
     
-    ProdVMs --> ProdInv["📝 Ansible Inventory<br/>inventories/production/<br/>firewall=✅ https=✅ backup=✅"]
-    StageVMs --> StageInv["📝 Ansible Inventory<br/>inventories/staging/<br/>firewall=❌ https=❌ backup=❌"]
+    ProdVMs --> ProdInv[Ansible Inventory<br/>inventories/production/<br/>firewall=true https=true backup=true]
+    StageVMs --> StageInv[Ansible Inventory<br/>inventories/staging/<br/>firewall=false https=false backup=false]
     
-    ProdInv --> ProdPlay["▶️ Ansible Playbook<br/>site.yml"]
-    StageInv --> StagePlay["▶️ Ansible Playbook<br/>site.yml"]
+    ProdInv --> ProdPlay[Ansible Playbook site.yml]
+    StageInv --> StagePlay[Ansible Playbook site.yml]
     
-    ProdPlay --> ProdFinal["✅ Serveurs Production<br/>Web: Nginx + HTTPS<br/>DB: MariaDB + Backup<br/>Security: UFW actif"]
-    StagePlay --> StageFinal["✅ Serveurs Staging<br/>Web: Nginx HTTP simple<br/>DB: MariaDB sans backup<br/>Security: aucune"]
+    ProdPlay --> ProdFinal[Serveurs Production<br/>Web: Nginx + HTTPS<br/>DB: MariaDB + Backup<br/>Security: UFW actif]
+    StagePlay --> StageFinal[Serveurs Staging<br/>Web: Nginx HTTP simple<br/>DB: MariaDB sans backup<br/>Security: aucune]
     
     style Start fill:#333,stroke:#666,color:#fff,stroke-width:2px
     style TFVars fill:#444,stroke:#666,color:#fff,stroke-width:2px
