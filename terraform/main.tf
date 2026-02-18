@@ -5,6 +5,9 @@ resource "proxmox_vm_qemu" "web_server" {
   clone       = "debian12-template"
   full_clone  = true
   
+  # Tags
+  tags        = "${var.environment};web;nginx"
+  
   # ACTIVATION DE L'AGENT QEMU
   agent       = 1
 
@@ -51,6 +54,9 @@ resource "proxmox_vm_qemu" "db_server" {
   vmid        = var.vm_config[var.environment].db_vmid
   clone       = "debian12-template"
   full_clone  = true
+  
+  # Tags
+  tags        = "${var.environment};db;mariadb"
   
   # ACTIVATION DE L'AGENT QEMU
   agent       = 1
