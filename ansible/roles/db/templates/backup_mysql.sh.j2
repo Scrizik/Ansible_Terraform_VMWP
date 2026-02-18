@@ -1,0 +1,37 @@
+#!/bin/bash
+# Script de backup automatique MariaDB
+# Généré par Ansible - Environnement: {{ environment_name | default('production') }}
+
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="{{ db_backup_dir | default('/var/backups/mariadb') }}"
+BACKUP_FILE="$BACKUP_DIR/backup_$DATE.sql.gz"
+RETENTION_DAYS=7
+
+echo "=================================================="
+echo "Début du backup MariaDB - $(date)"
+echo "=================================================="
+
+# Créer le backup
+if mysqldump --all-databases --single-transaction --quick --lock-tables=false | gzip > "$BACKUP_FILE"; then
+    echo "✓ Backup créé avec succès: $BACKUP_FILE"
+    
+    # Vérifier la taille du fichier
+    SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+    echo "  Taille: $SIZE"
+    
+    # Nettoyer les anciens backups (garder 7 jours)
+    find "$BACKUP_DIR" -name "backup_*.sql.gz" -type f -mtime +$RETENTION_DAYS -delete
+    echo "✓ Nettoyage des backups de plus de $RETENTION_DAYS jours effectué"
+    
+    # Compter les backups restants
+    COUNT=$(find "$BACKUP_DIR" -name "backup_*.sql.gz" -type f | wc -l)
+    echo "  Total de backups: $COUNT"
+else
+    echo "✗ ERREUR lors du backup!"
+    exit 1
+fi
+
+echo "=================================================="
+echo "Fin du backup MariaDB - $(date)"
+echo "=================================================="
+echo ""

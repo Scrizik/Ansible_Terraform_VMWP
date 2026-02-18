@@ -1,247 +1,236 @@
-# Infrastructure Proxmox - Terraform + Ansible
+# Architecture Multi-Environnements - Terraform + Ansible
 
-Projet complet de déploiement et configuration d'infrastructure sur Proxmox :
-- **Terraform** : Provisionnement des VMs (web + db)
-- **Ansible** : Configuration automatisée avec rôles
+## Vue d'ensemble
 
-## � Workflow de déploiement
+Ce projet démontre une **architecture professionnelle** où Terraform et Ansible travaillent ensemble pour gérer plusieurs environnements (production, staging) **sans duplication de code**.
 
-```mermaid
-flowchart TD
-    Start([👤 Début du projet]) --> TF_Init[📦 Terraform Init]
-    TF_Init --> TF_Plan[📋 Terraform Plan]
-    TF_Plan --> TF_Apply[🚀 Terraform Apply]
-    
-    TF_Apply --> VM_Web[☁️ VM Web créée<br/>192.168.1.201]
-    TF_Apply --> VM_DB[☁️ VM DB créée<br/>192.168.1.202]
-    
-    VM_Web --> Cloud_Init_Web[⚙️ Cloud-init<br/>Configuration initiale]
-    VM_DB --> Cloud_Init_DB[⚙️ Cloud-init<br/>Configuration initiale]
-    
-    Cloud_Init_Web --> Ansible_Start{🔧 Ansible Ready}
-    Cloud_Init_DB --> Ansible_Start
-    
-    Ansible_Start --> Ansible_Ping[📡 Test connectivité SSH]
-    Ansible_Ping --> Ansible_Facts[📊 Collecte des facts]
-    
-    Ansible_Facts --> Role_Common[👤 Rôle Common<br/>Création user deploy]
-    
-    Role_Common --> Role_Web[🌐 Rôle Web<br/>Install Nginx]
-    Role_Common --> Role_DB[🗄️ Rôle DB<br/>Install MariaDB]
-    
-    Role_Web --> Deploy_Page[📄 Déploiement page HTML<br/>avec IP DB dynamique]
-    Role_DB --> DB_Ready[✅ MariaDB actif]
-    
-    Deploy_Page --> Verification{🔍 Vérification}
-    DB_Ready --> Verification
-    
-    Verification --> Success([✅ Déploiement réussi<br/>http://192.168.1.201])
-    
-    style Start fill:#666,stroke:#333,color:#fff
-    style Success fill:#2d5f2e,stroke:#1b3a1c,color:#fff
-    style TF_Apply fill:#5d4b2c,stroke:#3d2b1c,color:#fff
-    style Ansible_Start fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style VM_Web fill:#3d5a80,stroke:#1d3a60,color:#fff
-    style VM_DB fill:#3d5a80,stroke:#1d3a60,color:#fff
-    style Role_Web fill:#2d4a2d,stroke:#1d2a1d,color:#fff
-    style Role_DB fill:#2d4a2d,stroke:#1d2a1d,color:#fff
-    style TF_Init fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style TF_Plan fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style Cloud_Init_Web fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style Cloud_Init_DB fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style Ansible_Ping fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style Ansible_Facts fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style Role_Common fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style Deploy_Page fill:#4a4a4a,stroke:#2a2a2a,color:#fff
-    style DB_Ready fill:#2d5f2e,stroke:#1b3a1c,color:#fff
-    style Verification fill:#4a4a4a,stroke:#2a2a2a,color:#fff
+## 🏗️ Comment ça fonctionne
+
+### 1. Terraform: Gestion des environnements via variables
+
+**Fichier : `terraform/variables.tf`**
+```hcl
+variable "environment" {
+  default = "production"  # ou "staging"
+}
+
+variable "vm_config" {
+  default = {
+    production = {
+      web_vmid = 110
+      web_ip   = "192.168.1.201"
+      ...
+    }
+    staging = {
+      web_vmid = 120
+      web_ip   = "192.168.1.211"
+      ...
+    }
+  }
+}
 ```
 
-## 📋 Services déployés
-- **VM Web** : Nginx avec page affichant l'IP de la DB
-- **VM DB** : MariaDB avec base de test
-- **Utilisateur** : `deploy` créé sur les deux VMs
-
-## 📁 Structure du projet
-
-```
-Ansible_Terraform_Proxmox/
-├── terraform/              # Infrastructure as Code
-│   ├── main.tf            # Définition des VMs
-│   ├── provider.tf        # Configuration Proxmox
-│   ├── variables.tf       # Variables Terraform
-│   ├── outputs.tf         # IPs des VMs
-│   └── terraform.tfvars   # Valeurs des variables
-│
-└── ansible/               # Configuration Management
-    ├── site.yml           # Playbook principal
-    ├── inventory.yml      # Inventory des serveurs (YAML)
-    ├── ansible.cfg        # Configuration Ansible
-    ├── requirements.yml   # Dépendances Ansible
-    └── roles/
-        ├── common/        # Utilisateur deploy
-        ├── web/           # Nginx + page HTML
-        └── db/            # MariaDB
-
+**Fichier : `terraform/main.tf`**
+```hcl
+resource "proxmox_vm_qemu" "web_server" {
+  name  = "web-server-${var.environment}"  # -production ou -staging
+  vmid  = var.vm_config[var.environment].web_vmid
+  ipconfig0 = "ip=${var.vm_config[var.environment].web_ip}/24"
+}
 ```
 
-## 🚀 Déploiement complet
+### 2. Fichiers tfvars par environnement
 
-### Étape 1 : Prérequis
+**`terraform/production.tfvars`**
+```hcl
+environment = "production"
+```
+
+**`terraform/staging.tfvars`**
+```hcl
+environment = "staging"
+```
+
+### 3. Déploiement Terraform
 
 ```bash
-# Terraform
-terraform version  # v1.0+
+# Production
+terraform apply -var-file="production.tfvars"
+# Créé: web-server-production (110), db-server-production (111)
 
-# Ansible
-ansible --version  # v2.9+
+# Staging
+terraform apply -var-file="staging.tfvars"
+# Créé: web-server-staging (120), db-server-staging (121)
 ```
 
-### Étape 2 : Provisionner l'infrastructure avec Terraform
+### 4. Ansible: Variables par environnement
+
+**Structure:**
+```
+ansible/inventories/
+├── production/
+│   ├── hosts.yml              # IPs: 192.168.1.201-202
+│   └── group_vars/all.yml     # firewall_enabled=true, https_enabled=true
+└── staging/
+    ├── hosts.yml              # IPs: 192.168.1.211-212
+    └── group_vars/all.yml     # firewall_enabled=false, https_enabled=false
+```
+
+**Déploiement Ansible:**
+```bash
+# Production (avec sécurité)
+ansible-playbook -i inventories/production/hosts.yml site.yml -K
+
+# Staging (sans sécurité)
+ansible-playbook -i inventories/staging/hosts.yml site.yml -K
+```
+
+### 5. Rôles conditionnels
+
+**`ansible/roles/security/tasks/main.yml`**
+```yaml
+- name: Configurer le firewall
+  ufw: ...
+  when: firewall_enabled | default(false)  # Seulement en production
+```
+
+**`ansible/roles/web/tasks/main.yml`**
+```yaml
+- name: Configurer HTTPS
+  template:
+    src: nginx-https.conf.j2
+    dest: /etc/nginx/sites-available/default
+  when: https_enabled | default(false)  # Seulement en production
+```
+
+## 📊 Flux de données
+
+```
+Terraform variables.tf
+    ↓
+production.tfvars → environment="production" → VMs *-production, IPs .201-.202
+staging.tfvars    → environment="staging"    → VMs *-staging, IPs .211-.212
+    ↓
+Ansible inventory
+    ↓
+production/group_vars/all.yml → firewall=✅, https=✅, backup=✅
+staging/group_vars/all.yml    → firewall=❌, https=❌, backup=❌
+    ↓
+Ansible roles avec conditions (when: xxx_enabled)
+```
+
+## 🎯 Avantages de cette architecture
+
+### ✅ Code unique
+
+- **1 seul** `main.tf` pour tous les environnements
+- **1 seul** `site.yml` pour tous les environnements
+- **1 seul** rôle `web`, `db`, `security`
+- Variables différentes selon l'environnement
+
+### ✅ Facile à étendre
+
+Ajouter un environnement "preprod" :
+
+1. Terraform: Ajouter dans `variables.tf`
+   ```hcl
+   preprod = {
+     web_vmid = 130
+     web_ip   = "192.168.1.221"
+   }
+   ```
+
+2. Créer `preprod.tfvars`
+   ```hcl
+   environment = "preprod"
+   ```
+
+3. Ansible: Copier `inventories/staging/` → `inventories/preprod/`
+4. Ajuster les IPs et variables dans `preprod/hosts.yml`
+
+### ✅ Sécurité
+
+- Production: Configuration sécurisée par défaut
+- Staging: Configuration légère pour développement
+- Impossible de déployer production sans HTTPS par erreur
+
+### ✅ Maintenance simple
+
+- Correction d'un bug dans `main.tf` → Affecte tous les environnements
+- Amélioration d'un rôle → Affecte tous les environnements
+- Pas de risque de désynchronisation
+
+## 🔍 Exemple concret
+
+### Déployer les deux environnements en parallèle
 
 ```bash
-cd terraform/
+# Terminal 1: Production
+./deploy-production.sh
+# → Créé web/db-server-production
+# → Configure avec HTTPS, Firewall, Backup
 
-# Initialiser Terraform
-terraform init
-
-# Vérifier le plan
-terraform plan
-
-# Créer les VMs
-terraform apply
-
-# Voir les IPs des VMs
-terraform output
+# Terminal 2: Staging  
+./deploy-staging.sh
+# → Créé web/db-server-staging
+# → Configure sans sécurité (tests rapides)
 ```
 
-### Étape 3 : Configurer les serveurs avec Ansible
+### Tester un changement en staging d'abord
 
 ```bash
-cd ../ansible/
+# 1. Modifier le playbook ou role
+vim ansible/roles/web/tasks/main.yml
 
-# Installer les collections nécessaires
-ansible-galaxy collection install -r requirements.yml
+# 2. Test en staging
+./deploy-staging.sh
+curl http://192.168.1.211  # Vérifier
 
-# Tester la connectivité SSH
-ansible all -m ping
-
-# Lancer la configuration complète
-ansible-playbook site.yml
+# 3. Si OK, déployer en production
+git commit -m "feat: amélioration web role"
+./deploy-production.sh
+curl -k https://192.168.1.201  # Vérifier
 ```
 
-### Étape 4 : Vérification
-
-Accédez à **http://192.168.1.201** dans votre navigateur.
-Vous devriez voir une page Nginx affichant l'IP du serveur de base de données.
-
-## 🔧 Commandes utiles
-
-### Terraform
+### Détruire staging, garder production
 
 ```bash
-# Voir l'état actuel
-terraform show
+cd terraform
+terraform destroy -var-file="staging.tfvars"
+# → Supprime seulement les VMs staging
 
-# Détruire l'infrastructure
-terraform destroy
-
-# Appliquer un module spécifique
-terraform apply -target=proxmox_vm_qemu.web_server
+terraform output -var-file="production.tfvars"
+# → Production toujours active
 ```
 
-### Ansible
+## 📝 Checklist de validation
 
-```bash
-# Exécuter uniquement sur web
-ansible-playbook site.yml --limit web
+- [x] Terraform: Variable `environment` utilisée
+- [x] Terraform: VMIDs différents par environnement
+- [x] Terraform: IPs différentes par environnement  
+- [x] Terraform: Noms de VMs incluent l'environnement
+- [x] Ansible: Inventories séparés
+- [x] Ansible: Variables par environnement
+- [x] Ansible: Rôles avec conditions `when:`
+- [x] Scripts de déploiement automatisés
+- [x] Documentation complète
 
-# Exécuter uniquement sur db
-ansible-playbook site.yml --limit db
+## 🎓 Concepts clés démontrés
 
-# Mode dry-run (vérification)
-ansible-playbook site.yml --check
+1. **Infrastructure as Code** (IaC): Terraform
+2. **Configuration Management**: Ansible
+3. **Separation of Concerns**: Terraform = infra, Ansible = config
+4. **DRY Principle**: Un seul code, plusieurs environnements
+5. **Variables d'environnement**: Configuration externalisée
+6. **Idempotence**: Playbooks relançables sans erreur
+7. **Sécurité par défaut**: Production sécurisée automatiquement
+8. **Conditionnalité**: Comportement différent selon l'environnement
 
-# Verbose mode
-ansible-playbook site.yml -v
-```
+## 🚀 Pour aller plus loin
 
-## 📦 VMs créées
-
-| Nom | IP | Services | Specs |
-|-----|-----|----------|-------|
-| web-server | 192.168.1.201 | Nginx | 2 CPU, 2GB RAM, 20GB disk |
-| db-server | 192.168.1.202 | MariaDB | 2 CPU, 2GB RAM, 20GB disk |
-
-## 🔑 Authentification
-
-- **Utilisateur système** : `jordan` (configuré par cloud-init)
-- **Utilisateur déploiement** : `deploy` (créé par Ansible)
-- **Clé SSH** : ssh-ed25519 (définie dans terraform/main.tf)
-
-## ✅ Fonctionnalités
-
-### Terraform
-- ✅ Templates Proxmox (Debian 12)
-- ✅ Configuration réseau statique
-- ✅ Cloud-init pour l'initialisation
-- ✅ QEMU Guest Agent activé
-
-### Ansible
-- ✅ Rôles modulaires (common, web, db)
-- ✅ Playbook idempotent
-- ✅ Handlers pour les services
-- ✅ Templates Jinja2
-- ✅ Variables d'inventory dynamiques
-
-## 🔄 Workflow complet
-
-```bash
-# 1. Créer l'infrastructure
-cd terraform && terraform apply && cd ..
-
-# 2. Configurer les serveurs
-cd ansible && ansible-playbook site.yml
-
-# 3. Vérifier le déploiement
-curl http://192.168.1.201
-
-# 4. Détruire (si nécessaire)
-cd terraform && terraform destroy
-```
-
-## 📝 Notes
-
-- Les VMs utilisent le template `debian12-template` (doit exister dans Proxmox)
-- Le réseau est configuré sur `vmbr0` (bridge par défaut)
-- Les IPs sont statiques (192.168.1.201 et 192.168.1.202)
-- Le mot de passe par défaut est `Serveur1234` (à changer en production)
-
-## 🛠️ Troubleshooting
-
-### Terraform ne trouve pas le template
-```bash
-# Vérifier les templates disponibles dans Proxmox
-qm list
-```
-
-### Ansible ne peut pas se connecter
-```bash
-# Tester SSH manuellement
-ssh jordan@192.168.1.201
-
-# Vérifier l'inventory
-ansible-inventory --list
-```
-
-### Les VMs ne répondent pas
-```bash
-# Vérifier que le QEMU Guest Agent est actif
-qm agent <vmid> ping
-```
-
-## 📚 Ressources
-
-- [Terraform Proxmox Provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs)
-- [Ansible Documentation](https://docs.ansible.com/)
-- [Proxmox VE Documentation](https://pve.proxmox.com/wiki/Main_Page)
+- ✅ **CI/CD avec GitHub Actions** : Voir [.github/README_CICD.md](.github/README_CICD.md)
+- ⚙️ **AWX (Ansible Tower)** : Voir [docs/AWX_GUIDE.md](docs/AWX_GUIDE.md)
+- 🔐 Intégrer **Vault** pour les secrets
+- ☁️ Utiliser **Terraform Cloud** pour le state distant
+- 📊 Ajouter **monitoring** (Prometheus, Grafana)
+- 🔄 Implémenter **blue/green deployment**

@@ -36,3 +36,44 @@
     state: present
     login_unix_socket: /var/run/mysqld/mysqld.sock
   tags: mariadb
+
+- name: Créer le répertoire de backup
+  file:
+    path: "{{ db_backup_dir | default('/var/backups/mariadb') }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: db_backup_enabled | default(false)
+  tags: backup
+
+- name: Créer le script de backup MySQL
+  template:
+    src: backup_mysql.sh.j2
+    dest: /usr/local/bin/backup_mysql.sh
+    owner: root
+    group: root
+    mode: '0750'
+  when: db_backup_enabled | default(false)
+  tags: backup
+
+- name: Configurer le cron job pour backup automatique
+  cron:
+    name: "Backup automatique MariaDB"
+    minute: "{{ db_backup_schedule.split()[0] }}"
+    hour: "{{ db_backup_schedule.split()[1] }}"
+    day: "{{ db_backup_schedule.split()[2] }}"
+    month: "{{ db_backup_schedule.split()[3] }}"
+    weekday: "{{ db_backup_schedule.split()[4] }}"
+    job: "/usr/local/bin/backup_mysql.sh >> /var/log/mysql_backup.log 2>&1"
+    user: root
+    state: present
+  when: db_backup_enabled | default(false)
+  tags: backup
+
+- name: Désactiver le cron job de backup en staging
+  cron:
+    name: "Backup automatique MariaDB"
+    state: absent
+  when: not (db_backup_enabled | default(false))
+  tags: backup

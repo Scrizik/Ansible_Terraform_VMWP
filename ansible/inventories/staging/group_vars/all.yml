@@ -1,0 +1,14 @@
+---
+# Variables spécifiques STAGING
+environment_name: staging
+
+# Sécurité allégée en staging
+firewall_enabled: false
+https_enabled: false
+restrict_ports: false
+
+# Backup DB désactivé en staging
+db_backup_enabled: false
+
+# Nginx
+nginx_server_name: "web-staging.local"

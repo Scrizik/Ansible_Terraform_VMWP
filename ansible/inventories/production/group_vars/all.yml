@@ -1,0 +1,22 @@
+---
+# Variables spécifiques PRODUCTION
+environment_name: production
+
+# Sécurité stricte en production
+firewall_enabled: true
+https_enabled: true
+restrict_ports: true
+
+# Ports autorisés en production
+allowed_ports:
+  - 22    # SSH
+  - 80    # HTTP (redirection vers HTTPS)
+  - 443   # HTTPS
+
+# Backup DB activé en production
+db_backup_enabled: true
+db_backup_schedule: "0 2 * * *"  # Tous les jours à 2h du matin
+db_backup_dir: "/var/backups/mariadb"
+
+# Nginx
+nginx_server_name: "web-prod.local"

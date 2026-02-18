@@ -1,0 +1,5 @@
+---
+- name: Redémarrer UFW
+  systemd:
+    name: ufw
+    state: restarted

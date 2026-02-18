@@ -31,21 +31,56 @@
             font-weight: bold;
             color: #555;
         }
+        .env-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .env-production {
+            background-color: #d32f2f;
+            color: white;
+        }
+        .env-staging {
+            background-color: #ffa726;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🚀 Serveur Web Nginx</h1>
         <p>Déployé avec Terraform et Ansible</p>
+        <p>
+            <span class="env-badge env-{{ environment_name | default('production') }}">
+                🏷️ Environnement: {{ environment_name | default('production') | upper }}
+            </span>
+        </p>
         
         <div class="info">
             <p><span class="label">IP du serveur Web:</span> {{ ansible_default_ipv4.address }}</p>
             <p><span class="label">Hostname:</span> {{ ansible_hostname }}</p>
+{% if https_enabled | default(false) %}
+            <p><span class="label">🔒 HTTPS:</span> ✅ Activé</p>
+{% else %}
+            <p><span class="label">🔓 HTTPS:</span> ❌ Désactivé</p>
+{% endif %}
+{% if firewall_enabled | default(false) %}
+            <p><span class="label">🛡️ Firewall:</span> ✅ Activé (Ports: {{ allowed_ports | join(', ') }})</p>
+{% else %}
+            <p><span class="label">🛡️ Firewall:</span> ❌ Désactivé</p>
+{% endif %}
         </div>
         
         <div class="info">
             <p><span class="label">🗄️ IP du serveur de Base de Données:</span></p>
             <h2 style="color: #2196F3; margin: 10px 0;">{{ hostvars[groups['db'][0]]['ansible_default_ipv4']['address'] }}</h2>
+{% if db_backup_enabled | default(false) %}
+            <p><span class="label">💾 Backup DB:</span> ✅ Activé (Schedule: {{ db_backup_schedule | default('N/A') }})</p>
+{% else %}
+            <p><span class="label">💾 Backup DB:</span> ❌ Désactivé</p>
+{% endif %}
         </div>
         
         <div class="info">

@@ -9,6 +9,7 @@
   become: yes
   roles:
     - common
+    - security
     - web
 
 - name: Configuration des serveurs DB
@@ -16,4 +17,5 @@
   become: yes
   roles:
     - common
+    - security
     - db

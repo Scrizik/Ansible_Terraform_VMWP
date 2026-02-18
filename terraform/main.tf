@@ -1,7 +1,7 @@
 resource "proxmox_vm_qemu" "web_server" {
-  name        = "web-server"
+  name        = "web-server-${var.environment}"
   target_node = "pve"
-  vmid        = 110
+  vmid        = var.vm_config[var.environment].web_vmid
   clone       = "debian12-template"
   full_clone  = true
   
@@ -38,7 +38,7 @@ resource "proxmox_vm_qemu" "web_server" {
   os_type    = "cloud-init"
   ciuser     = "jordan"
   cipassword = "Serveur1234" 
-  ipconfig0  = "ip=192.168.1.201/24,gw=192.168.1.1"
+  ipconfig0  = "ip=${var.vm_config[var.environment].web_ip}/24,gw=192.168.1.1"
   
   sshkeys = <<EOF
   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHBh2mv22dPFyLNXwFwHgMUamb+3xqmvnNDSUv8xkIG3 jordan@terraform
@@ -46,9 +46,9 @@ resource "proxmox_vm_qemu" "web_server" {
 }
 
 resource "proxmox_vm_qemu" "db_server" {
-  name        = "db-server"
+  name        = "db-server-${var.environment}"
   target_node = "pve"
-  vmid        = 111
+  vmid        = var.vm_config[var.environment].db_vmid
   clone       = "debian12-template"
   full_clone  = true
   
@@ -85,7 +85,7 @@ resource "proxmox_vm_qemu" "db_server" {
   os_type    = "cloud-init"
   ciuser     = "jordan"
   cipassword = "Serveur1234"
-  ipconfig0  = "ip=192.168.1.202/24,gw=192.168.1.1"
+  ipconfig0  = "ip=${var.vm_config[var.environment].db_ip}/24,gw=192.168.1.1"
   
   sshkeys = <<EOF
   ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHBh2mv22dPFyLNXwFwHgMUamb+3xqmvnNDSUv8xkIG3 jordan@terraform

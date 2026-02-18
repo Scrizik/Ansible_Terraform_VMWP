@@ -1,0 +1,39 @@
+---
+- name: Installer UFW (Uncomplicated Firewall)
+  apt:
+    name: ufw
+    state: present
+    update_cache: yes
+  when: firewall_enabled | default(false)
+  tags: security
+
+- name: Configurer les règles UFW par défaut
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: 'incoming', policy: 'deny' }
+    - { direction: 'outgoing', policy: 'allow' }
+  when: firewall_enabled | default(false)
+  tags: security
+
+- name: Autoriser les ports nécessaires
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop: "{{ allowed_ports | default([22, 80, 443]) }}"
+  when: firewall_enabled | default(false)
+  tags: security
+
+- name: Activer UFW
+  ufw:
+    state: enabled
+  when: firewall_enabled | default(false)
+  tags: security
+
+- name: Afficher le statut du firewall
+  debug:
+    msg: "Firewall activé en environnement {{ environment_name | default('development') }}"
+  when: firewall_enabled | default(false)
+  tags: security
