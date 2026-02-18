@@ -14,6 +14,49 @@ Projet complet de déploiement et configuration d'infrastructure sur Proxmox :
 └─────────────────┘         └─────────────────┘
 ```
 
+## 🔄 Workflow de déploiement
+
+```mermaid
+flowchart TD
+    Start([👤 Début du projet]) --> TF_Init[📦 Terraform Init]
+    TF_Init --> TF_Plan[📋 Terraform Plan]
+    TF_Plan --> TF_Apply[🚀 Terraform Apply]
+    
+    TF_Apply --> VM_Web[☁️ VM Web créée<br/>192.168.1.201]
+    TF_Apply --> VM_DB[☁️ VM DB créée<br/>192.168.1.202]
+    
+    VM_Web --> Cloud_Init_Web[⚙️ Cloud-init<br/>Configuration initiale]
+    VM_DB --> Cloud_Init_DB[⚙️ Cloud-init<br/>Configuration initiale]
+    
+    Cloud_Init_Web --> Ansible_Start{🔧 Ansible Ready}
+    Cloud_Init_DB --> Ansible_Start
+    
+    Ansible_Start --> Ansible_Ping[📡 Test connectivité SSH]
+    Ansible_Ping --> Ansible_Facts[📊 Collecte des facts]
+    
+    Ansible_Facts --> Role_Common[👤 Rôle Common<br/>Création user deploy]
+    
+    Role_Common --> Role_Web[🌐 Rôle Web<br/>Install Nginx]
+    Role_Common --> Role_DB[🗄️ Rôle DB<br/>Install MariaDB]
+    
+    Role_Web --> Deploy_Page[📄 Déploiement page HTML<br/>avec IP DB dynamique]
+    Role_DB --> DB_Ready[✅ MariaDB actif]
+    
+    Deploy_Page --> Verification{🔍 Vérification}
+    DB_Ready --> Verification
+    
+    Verification --> Success([✅ Déploiement réussi<br/>http://192.168.1.201])
+    
+    style Start fill:#e1f5ff
+    style Success fill:#c8e6c9
+    style TF_Apply fill:#fff9c4
+    style Ansible_Start fill:#f3e5f5
+    style VM_Web fill:#bbdefb
+    style VM_DB fill:#bbdefb
+    style Role_Web fill:#c5e1a5
+    style Role_DB fill:#c5e1a5
+```
+
 ### Services déployés
 - **VM Web** : Nginx avec page affichant l'IP de la DB
 - **VM DB** : MariaDB avec base de test
