@@ -133,37 +133,95 @@ ansible-playbook -i inventories/staging/hosts.yml site.yml -K
 
 ```mermaid
 flowchart TD
-    Start[Déploiement Multi-Environnements]
+    Start[Démarrage Déploiement] --> Choice{Environnement ?}
     
-    Start --> TFVars{Choix environnement}
+    Choice -->|Production| ProdFiles[Fichiers Production<br/>production.tfvars<br/>inventories/production/]
+    Choice -->|Staging| StageFiles[Fichiers Staging<br/>staging.tfvars<br/>inventories/staging/]
     
-    TFVars -->|production.tfvars| ProdTF[Terraform Apply production]
-    TFVars -->|staging.tfvars| StageTF[Terraform Apply staging]
+    ProdFiles --> TFInitProd[Terraform Init<br/>Téléchargement provider Proxmox]
+    StageFiles --> TFInitStage[Terraform Init<br/>Téléchargement provider Proxmox]
     
-    ProdTF --> ProdVMs[VMs Production<br/>web-server-production<br/>db-server-production<br/>IPs .201-.202]
-    StageTF --> StageVMs[VMs Staging<br/>web-server-staging<br/>db-server-staging<br/>IPs .211-.212]
+    TFInitProd --> TFApplyProd[Terraform Apply<br/>environment=production<br/>pm_parallel=2]
+    TFInitStage --> TFApplyStage[Terraform Apply<br/>environment=staging<br/>pm_parallel=2]
     
-    ProdVMs --> ProdInv[Ansible Inventory<br/>inventories/production/<br/>firewall=true https=true backup=true]
-    StageVMs --> StageInv[Ansible Inventory<br/>inventories/staging/<br/>firewall=false https=false backup=false]
+    TFApplyProd --> ProxmoxProd[Proxmox VE<br/>Clone template debian12]
+    TFApplyStage --> ProxmoxStage[Proxmox VE<br/>Clone template debian12]
     
-    ProdInv --> ProdPlay[Ansible Playbook site.yml]
-    StageInv --> StagePlay[Ansible Playbook site.yml]
+    ProxmoxProd --> VMWebProd[VM: web-server-production<br/>VMID: 110<br/>IP: 192.168.1.201<br/>2 CPU / 2GB RAM]
+    ProxmoxProd --> VMDBProd[VM: db-server-production<br/>VMID: 111<br/>IP: 192.168.1.202<br/>2 CPU / 2GB RAM]
     
-    ProdPlay --> ProdFinal[Serveurs Production<br/>Web: Nginx + HTTPS<br/>DB: MariaDB + Backup<br/>Security: UFW actif]
-    StagePlay --> StageFinal[Serveurs Staging<br/>Web: Nginx HTTP simple<br/>DB: MariaDB sans backup<br/>Security: aucune]
+    ProxmoxStage --> VMWebStage[VM: web-server-staging<br/>VMID: 120<br/>IP: 192.168.1.211<br/>2 CPU / 2GB RAM]
+    ProxmoxStage --> VMDBStage[VM: db-server-staging<br/>VMID: 121<br/>IP: 192.168.1.212<br/>2 CPU / 2GB RAM]
     
-    style Start fill:#333,stroke:#666,color:#fff,stroke-width:2px
-    style TFVars fill:#444,stroke:#666,color:#fff,stroke-width:2px
-    style ProdTF fill:#555,stroke:#777,color:#fff,stroke-width:2px
-    style StageTF fill:#555,stroke:#777,color:#fff,stroke-width:2px
-    style ProdVMs fill:#666,stroke:#888,color:#fff,stroke-width:2px
-    style StageVMs fill:#666,stroke:#888,color:#fff,stroke-width:2px
-    style ProdInv fill:#555,stroke:#777,color:#fff,stroke-width:2px
-    style StageInv fill:#555,stroke:#777,color:#fff,stroke-width:2px
-    style ProdPlay fill:#444,stroke:#666,color:#fff,stroke-width:2px
-    style StagePlay fill:#444,stroke:#666,color:#fff,stroke-width:2px
-    style ProdFinal fill:#2d5016,stroke:#5a8a2d,color:#fff,stroke-width:3px
-    style StageFinal fill:#2d5016,stroke:#5a8a2d,color:#fff,stroke-width:3px
+    VMWebProd --> CloudInitProd[Cloud-init<br/>User: jordan<br/>SSH Key injected]
+    VMDBProd --> CloudInitProd
+    VMWebStage --> CloudInitStage[Cloud-init<br/>User: jordan<br/>SSH Key injected]
+    VMDBStage --> CloudInitStage
+    
+    CloudInitProd --> WaitProd[Attente boot 30s]
+    CloudInitStage --> WaitStage[Attente boot 30s]
+    
+    WaitProd --> AnsiblePingProd[Ansible Ping<br/>Test connectivité SSH]
+    WaitStage --> AnsiblePingStage[Ansible Ping<br/>Test connectivité SSH]
+    
+    AnsiblePingProd --> AnsibleFactsProd[Gather Facts<br/>Collecte IPs et infos système]
+    AnsiblePingStage --> AnsibleFactsStage[Gather Facts<br/>Collecte IPs et infos système]
+    
+    AnsibleFactsProd --> RoleCommonProd[Role: common<br/>Création user deploy<br/>Update APT cache]
+    AnsibleFactsStage --> RoleCommonStage[Role: common<br/>Création user deploy<br/>Update APT cache]
+    
+    RoleCommonProd --> RoleSecProd[Role: security<br/>UFW firewall activé<br/>Ports: 22, 80, 443]
+    RoleCommonStage --> RoleWebStage[Role: web<br/>Installation Nginx]
+    
+    RoleSecProd --> RoleWebProd[Role: web<br/>Installation Nginx<br/>Certificat SSL généré<br/>Config HTTPS]
+    
+    RoleWebProd --> RoleDBProd[Role: db<br/>Installation MariaDB<br/>Script backup créé<br/>Cron job 2h du matin]
+    RoleWebStage --> RoleDBStage[Role: db<br/>Installation MariaDB<br/>Pas de backup]
+    
+    RoleDBProd --> DeployPageProd[Déploiement page web<br/>index.html avec badge PROD<br/>IP DB dynamique affichée]
+    RoleDBStage --> DeployPageStage[Déploiement page web<br/>index.html avec badge STAGING<br/>IP DB dynamique affichée]
+    
+    DeployPageProd --> FinalProd[PRODUCTION READY<br/>https://192.168.1.201<br/>https://web-prod.local<br/>Firewall actif<br/>Backup automatique]
+    DeployPageStage --> FinalStage[STAGING READY<br/>http://192.168.1.211<br/>http://web-staging.local<br/>Configuration légère]
+    
+    FinalProd --> TestProd[Tests Production<br/>curl -k https://192.168.1.201<br/>sudo ufw status<br/>ls /var/backups/mariadb/]
+    FinalStage --> TestStage[Tests Staging<br/>curl http://192.168.1.211<br/>Tests rapides]
+    
+    style Start fill:#1a1a1a,stroke:#444,color:#fff,stroke-width:3px
+    style Choice fill:#2a2a2a,stroke:#555,color:#fff,stroke-width:2px
+    style ProdFiles fill:#333,stroke:#666,color:#fff
+    style StageFiles fill:#333,stroke:#666,color:#fff
+    style TFInitProd fill:#3a3a3a,stroke:#666,color:#fff
+    style TFInitStage fill:#3a3a3a,stroke:#666,color:#fff
+    style TFApplyProd fill:#444,stroke:#777,color:#fff
+    style TFApplyStage fill:#444,stroke:#777,color:#fff
+    style ProxmoxProd fill:#4a4a4a,stroke:#888,color:#fff
+    style ProxmoxStage fill:#4a4a4a,stroke:#888,color:#fff
+    style VMWebProd fill:#555,stroke:#999,color:#fff
+    style VMDBProd fill:#555,stroke:#999,color:#fff
+    style VMWebStage fill:#555,stroke:#999,color:#fff
+    style VMDBStage fill:#555,stroke:#999,color:#fff
+    style CloudInitProd fill:#3a3a3a,stroke:#666,color:#fff
+    style CloudInitStage fill:#3a3a3a,stroke:#666,color:#fff
+    style WaitProd fill:#2a2a2a,stroke:#555,color:#fff
+    style WaitStage fill:#2a2a2a,stroke:#555,color:#fff
+    style AnsiblePingProd fill:#444,stroke:#777,color:#fff
+    style AnsiblePingStage fill:#444,stroke:#777,color:#fff
+    style AnsibleFactsProd fill:#4a4a4a,stroke:#888,color:#fff
+    style AnsibleFactsStage fill:#4a4a4a,stroke:#888,color:#fff
+    style RoleCommonProd fill:#555,stroke:#999,color:#fff
+    style RoleCommonStage fill:#555,stroke:#999,color:#fff
+    style RoleSecProd fill:#5a5a5a,stroke:#aaa,color:#fff
+    style RoleWebProd fill:#606060,stroke:#aaa,color:#fff
+    style RoleWebStage fill:#606060,stroke:#aaa,color:#fff
+    style RoleDBProd fill:#666,stroke:#bbb,color:#fff
+    style RoleDBStage fill:#666,stroke:#bbb,color:#fff
+    style DeployPageProd fill:#555,stroke:#999,color:#fff
+    style DeployPageStage fill:#555,stroke:#999,color:#fff
+    style FinalProd fill:#1a4d1a,stroke:#2d7a2d,color:#fff,stroke-width:3px
+    style FinalStage fill:#4d4d1a,stroke:#7a7a2d,color:#fff,stroke-width:3px
+    style TestProd fill:#0d330d,stroke:#1a5c1a,color:#fff
+    style TestStage fill:#33330d,stroke:#5c5c1a,color:#fff
 ```
 
 ## 🎯 Avantages de cette architecture
