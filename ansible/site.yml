@@ -1,4 +1,9 @@
 ---
+- name: Collecter les facts de tous les serveurs
+  hosts: all
+  gather_facts: yes
+  tasks: []
+
 - name: Configuration des serveurs Web
   hosts: web
   become: yes
