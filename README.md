@@ -66,28 +66,50 @@ flowchart TD
 
 ```
 Ansible_Terraform_Proxmox/
-├── terraform/              # Infrastructure as Code
+├── deploy.sh              # Script de déploiement complet
+├── terraform/             # Infrastructure as Code
 │   ├── main.tf            # Définition des VMs
-│   ├── provider.tf        # Configuration Proxmox
+│   ├── provider.tf        # Configuration Proxmox (API token)
 │   ├── variables.tf       # Variables Terraform
 │   ├── outputs.tf         # IPs des VMs
 │   └── terraform.tfvars   # Valeurs des variables
 │
 └── ansible/               # Configuration Management
     ├── site.yml           # Playbook principal
-    ├── inventory.yml      # Inventory des serveurs (YAML)
-    ├── ansible.cfg        # Configuration Ansible
+    ├── inventory.yml      # Inventory des serveurs (structure simplifiée)
+    ├── ansible.cfg        # Configuration minimale (inventory + become)
     ├── requirements.yml   # Dépendances Ansible
     └── roles/
         ├── common/        # Utilisateur deploy
+        │   └── tasks/
         ├── web/           # Nginx + page HTML
+        │   ├── tasks/
+        │   ├── handlers/  # Handler restart Nginx
+        │   └── templates/ # Template Jinja2
         └── db/            # MariaDB
+            └── tasks/
 
 ```
 
 ## 🚀 Déploiement complet
 
-### Étape 1 : Prérequis
+### Option 1 : Déploiement automatique (recommandé)
+
+```bash
+# Tout-en-un : Terraform + Ansible
+./deploy.sh
+```
+
+Le script `deploy.sh` effectue automatiquement :
+1. Initialisation et application Terraform
+2. Attente du démarrage des VMs (30s)
+3. Test de connectivité SSH
+4. Exécution du playbook Ansible
+5. Affichage des IPs récupérées depuis Terraform
+
+### Option 2 : Déploiement manuel
+
+#### Étape 1 : Prérequis
 
 ```bash
 # Terraform
@@ -97,7 +119,7 @@ terraform version  # v1.0+
 ansible --version  # v2.9+
 ```
 
-### Étape 2 : Provisionner l'infrastructure avec Terraform
+#### Étape 2 : Provisionner l'infrastructure avec Terraform
 
 ```bash
 cd terraform/
@@ -115,7 +137,7 @@ terraform apply
 terraform output
 ```
 
-### Étape 3 : Configurer les serveurs avec Ansible
+#### Étape 3 : Configurer les serveurs avec Ansible
 
 ```bash
 cd ../ansible/
@@ -130,7 +152,7 @@ ansible all -m ping
 ansible-playbook site.yml
 ```
 
-### Étape 4 : Vérification
+#### Étape 4 : Vérification
 
 Accédez à **http://192.168.1.201** dans votre navigateur.
 Vous devriez voir une page Nginx affichant l'IP du serveur de base de données.
@@ -190,24 +212,16 @@ ansible-playbook site.yml -v
 ### Ansible
 - ✅ Rôles modulaires (common, web, db)
 - ✅ Playbook idempotent
-- ✅ Handlers pour les services
-- ✅ Templates Jinja2
-- ✅ Variables d'inventory dynamiques
+- ✅ Handler pour Nginx
+- ✅ Templates Jinja2 (page web dynamique)
+- ✅ Become activé par défaut dans ansible.cfg
+- ✅ Inventory simplifié
 
-## 🔄 Workflow complet
+## 🔄 Nettoyage
 
 ```bash
-# 1. Créer l'infrastructure
-cd terraform && terraform apply && cd ..
-
-# 2. Configurer les serveurs
-cd ansible && ansible-playbook site.yml
-
-# 3. Vérifier le déploiement
-curl http://192.168.1.201
-
-# 4. Détruire (si nécessaire)
-cd terraform && terraform destroy
+# Détruire toute l'infrastructure
+cd terraform && terraform destroy -auto-approve
 ```
 
 ## 📝 Notes
@@ -216,6 +230,8 @@ cd terraform && terraform destroy
 - Le réseau est configuré sur `vmbr0` (bridge par défaut)
 - Les IPs sont statiques (192.168.1.201 et 192.168.1.202)
 - Le mot de passe par défaut est `Serveur1234` (à changer en production)
+- L'authentification Proxmox utilise un API token (non username/password)
+- Le script `deploy.sh` récupère les IPs dynamiquement depuis Terraform outputs
 
 ## 🛠️ Troubleshooting
 
