@@ -4,7 +4,7 @@ Projet complet de déploiement et configuration d'infrastructure sur Proxmox :
 - **Terraform** : Provisionnement des VMs (web + db)
 - **Ansible** : Configuration automatisée avec rôles
 
-## � Workflow de déploiement
+##🚀 Workflow de déploiement
 
 ```mermaid
 flowchart TD
