@@ -6,14 +6,12 @@
 
 - name: Configuration des serveurs Web
   hosts: web
-  become: true
   roles:
     - common
     - web
 
 - name: Configuration des serveurs DB
   hosts: db
-  become: true
   roles:
     - common
     - db
