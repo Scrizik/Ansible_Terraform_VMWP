@@ -78,7 +78,7 @@ Ansible_Terraform_Proxmox/
 │   ├── provider.tf        # Configuration Proxmox (API token)
 │   ├── variables.tf       # Variables Terraform
 │   ├── outputs.tf         # IPs des VMs
-│   └── terraform.tfvars   # Valeurs des variables
+│   └── terraform.tfvars   # Valeurs des variables (non visible sur Github)
 │
 └── ansible/               # Configuration Management
     ├── site.yml           # Playbook principal
