@@ -3,12 +3,12 @@
 set -e  # Arrête le script en cas d'erreur
 
 echo "============================================"
-echo "🚀 Déploiement Infrastructure Complète"
+echo          "Infrastructure Complète"
 echo "============================================"
 echo ""
 
 # Étape 1: Terraform
-echo "📦 Étape 1/2: Provisionnement avec Terraform"
+echo  "Étape 1/2: Provisionnement avec Terraform"
 echo "--------------------------------------------"
 cd terraform
 
@@ -22,7 +22,7 @@ cd ..
 echo ""
 
 # Étape 2: Ansible
-echo "⚙️  Étape 2/2: Configuration avec Ansible"
+echo "   Étape 2/2: Configuration avec Ansible"
 echo "--------------------------------------------"
 cd ansible
 
@@ -39,18 +39,18 @@ cd ..
 echo ""
 
 echo "============================================"
-echo "✅ Déploiement terminé avec succès !"
+echo     "Déploiement terminé avec succès !"
 echo "============================================"
 echo ""
 
 # Récupérer les IPs depuis Terraform
-echo "📋 Récupération des adresses IP..."
+echo "Récupération des adresses IP..."
 cd terraform
 WEB_IP=$(terraform output -raw web_server_ip)
 DB_IP=$(terraform output -raw db_server_ip)
 cd ..
 
 echo ""
-echo "🌐 Accès web: http://$WEB_IP"
-echo "🗄️  Serveur DB: $DB_IP"
+echo "Accès web: http://$WEB_IP"
+echo "Serveur DB: $DB_IP"
 echo ""
